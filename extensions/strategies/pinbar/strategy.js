@@ -40,11 +40,20 @@ module.exports = function container (get, set, clear) {
     },
 
     onPeriod: function (s, cb) {
+        // var market_trend = s.options.market_trend;
+         if(s.lookback.length ){
+           console.log('ii',s.lookback[0].pinbar_slope+"\n" );
+        //   if(s.lookback[0].pinbar_slope <=-2){
+        //     market_trend = 'down';
+        //   }else if(s.lookback[0].pinbar_slope >=2){
+        //     market_trend = 'up';
+        //   }
+         }
       if(typeof s.pinbar_sell_stop !== 'undefined'
         && s.pinbar_sell_stop > s.period.close
       ){
         s.signal ='sell';
-        console.log('lose stop',s.pinbar_sell_stop,s.period.close)
+        console.log("\n"+'lose stop',s.pinbar_sell_stop,s.period.close+"\n")
 
         s.pinbar_sell_stop = undefined;
         s.pinbar_profit_stop = undefined;
@@ -55,30 +64,38 @@ module.exports = function container (get, set, clear) {
         && s.pinbar_profit_stop < s.period.close
       ){
         s.signal ='sell';
-        console.log('profit sell stop',s.pinbar_profit_stop,s.period.close )
+        console.log("\n"+'profit sell stop',s.pinbar_profit_stop,s.period.close+"\n" )
 
         s.pinbar_sell_stop = undefined;
         s.pinbar_profit_stop = undefined;
         return cb();
       }
-console.log('no selling signal');
+//console.log("\n"+'no selling signal'+"\n");
 
       if(s.period.pinbar_direction == 1
         && s.period.pinbar_position_pct >= 80
         && s.period.pinbar_bottom_times >3
       ){
-        s.signal = 'buy';
-        s.pinbar_sell_stop = s.period.low;
-        let price_length = s.period.low  - s.pinbar_sell_stop;
-        if(s.options.market_trend ==='down'){
-          s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop)/2)+s.period.close;
 
-        }else{
-          s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop))*2+s.period.close;
+        if(s.lookback.length ){
+          console.log('ii',s.lookback[0].pinbar_slope+"\n" );
+          if(s.lookback[0].pinbar_slope <=-1){
+            s.signal = 'buy';
+            s.pinbar_sell_stop = s.period.low;
+            let price_length = s.period.low  - s.pinbar_sell_stop;
+            if(s.options.market_trend ==='down'){
+              s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop)/2)+s.period.close;
+
+            }else{
+              s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop))*2+s.period.close;
+            }
+            console.log("\n"+'buy',s.pinbar_profit_stop, s.pinbar_sell_stop , s.period.close,s.period.low,s.lookback[0].pinbar_slope+"\n" )
+
+          }
         }
+
         //s.pinbar_profit_stop =
       //  console.log('buy');
-      console.log('buy',s.pinbar_profit_stop, s.pinbar_sell_stop , s.period.close,s.period.low )
 
       }else if(s.period.pinbar_direction == -1
         && s.period.pinbar_position_pct <= 20
