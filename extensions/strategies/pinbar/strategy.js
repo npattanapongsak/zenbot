@@ -40,15 +40,36 @@ module.exports = function container (get, set, clear) {
     },
 
     onPeriod: function (s, cb) {
+
+    //  s.exchange.getBalance({currency: s.currency, asset: s.asset}, function (err, balance) {
+    //  console.log(balance);
+
+
         // var market_trend = s.options.market_trend;
          if(s.lookback.length ){
-           console.log('ii',s.lookback[0].pinbar_slope+"\n" );
+           console.log(`
+             slop: ${s.lookback[0].pinbar_slope}
+             pinbar_position_pct: ${s.period.pinbar_position_pct}
+             pinbar_bottom_times: ${s.period.pinbar_bottom_times}
+             pinbar_top_times : ${s.period.pinbar_top_times}
+             pinbar_num_down : ${s.period.pinbar_num_down}
+            `);
         //   if(s.lookback[0].pinbar_slope <=-2){
         //     market_trend = 'down';
         //   }else if(s.lookback[0].pinbar_slope >=2){
         //     market_trend = 'up';
         //   }
          }
+
+        // if(s.signal === 'bought'){
+        //   console.log('signan',s.signal);
+        // }
+      let buy_pinbar_position_pct = 80
+      let buy_pinbar_bottom_times = 3
+      if(s.options.market_trend ==='up'){
+        buy_pinbar_position_pct = 60
+        buy_pinbar_bottom_times = 2
+      }
       if(typeof s.pinbar_sell_stop !== 'undefined'
         && s.pinbar_sell_stop > s.period.close
       ){
@@ -70,42 +91,91 @@ module.exports = function container (get, set, clear) {
         s.pinbar_profit_stop = undefined;
         return cb();
       }
-//console.log("\n"+'no selling signal'+"\n");
+      // already bought skip buy signal
+  //    if(typeof s.pinbar_profit_stop  !== 'undefined' ||
+    //    typeof s.pinbar_sell_stop  !== 'undefined'
 
-      if(s.period.pinbar_direction == 1
-        && s.period.pinbar_position_pct >= 80
-        && s.period.pinbar_bottom_times >3
+  //    ){
+    //    console.log('xxx');
+        /*
+        { asset: '0.0000000000000000',
+          currency: '6193.8160804563442000',
+          asset_hold: '0.0000000000000000',
+          currency_hold: '1000.0000000000000000' }
+        */
+        //send buy signal but cannot buy
+        // if(balance.asset < 0.001){
+        //   s.pinbar_sell_stop = undefined;
+        //   s.pinbar_profit_stop = undefined;
+        // }else{
+      //    return cb();
+        //}
+        //console.log('djkjdl',typeof s.pinbar_profit_stop  == 'undefined',s.pinbar_profit_stop);
+
+    //  }
+      if(
+        //s.period.pinbar_direction == 1
+        s.period.pinbar_position_pct >= buy_pinbar_position_pct
+        && s.period.pinbar_bottom_times >= buy_pinbar_bottom_times
+        && s.period.pinbar_num_down >= 3
+
       ){
 
         if(s.lookback.length ){
-          console.log('ii',s.lookback[0].pinbar_slope+"\n" );
-          if(s.lookback[0].pinbar_slope <=-1){
+
+    //      if(s.lookback[0].pinbar_slope <=-1){
             s.signal = 'buy';
-            s.pinbar_sell_stop = s.period.low;
+
+
+             if(typeof s.pinbar_profit_stop  === 'undefined' ||
+                  typeof s.pinbar_sell_stop  === 'undefined'
+            ){
+              
+              if(typeof s.pinbar_sell_stop  === 'undefined'){
+                  s.pinbar_sell_stop = s.period.low;
+              }
             let price_length = s.period.low  - s.pinbar_sell_stop;
-            if(s.options.market_trend ==='down'){
-              s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop)/2)+s.period.close;
+            if(typeof s.pinbar_profit_stop  === 'undefined'){
+              if(s.options.market_trend ==='down'){
+                s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop)/2)+s.period.close;
 
-            }else{
-              s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop))*2+s.period.close;
+              }else{
+                s.pinbar_profit_stop =((s.period.close  - s.pinbar_sell_stop))*2+s.period.close;
+              }
             }
-            console.log("\n"+'buy',s.pinbar_profit_stop, s.pinbar_sell_stop , s.period.close,s.period.low,s.lookback[0].pinbar_slope+"\n" )
-
           }
+            console.log(`
+                buy
+                open : ${s.period.open}
+                profit_stop : ${s.pinbar_profit_stop}
+                sell_stop: ${s.pinbar_sell_stop}
+                low: ${s.period.low}
+
+            `);
+        //  }
         }
 
         //s.pinbar_profit_stop =
       //  console.log('buy');
 
-      }else if(s.period.pinbar_direction == -1
-        && s.period.pinbar_position_pct <= 20
-        && s.period.pinbar_top_times >3
+      }else if(
+        //s.period.pinbar_direction == -1
+        s.period.pinbar_position_pct <= 20
+        && s.period.pinbar_top_times >2
       ){
           s.signal = 'sell';
+
+
+
+
+
+          s.pinbar_sell_stop = undefined;
+          s.pinbar_profit_stop = undefined;
       //    console.log('sell')
       }
     //  console.log(s);
       cb();
+  //  });
     },
 
     onReport: function (s) {
